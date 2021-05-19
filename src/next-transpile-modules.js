@@ -310,6 +310,30 @@ const withTmInitializer = (modules = [], options = {}) => {
           } else {
             console.warn('next-transpile-modules - could not find default SASS rule, SASS imports may not work');
           }
+
+          const nextGlobalCssLoader = nextCssLoaders.oneOf.find(
+            (rule) => rule.sideEffects === true && regexEqual(rule.test, /(?<!\.module)\.css$/)
+          );
+
+          const nextGlobalSassLoader = nextCssLoaders.oneOf.find(
+            (rule) => rule.sideEffects === true && regexEqual(rule.test, /(?<!\.module)\.(scss|sass)$/)
+          );
+
+          if (nextGlobalCssLoader) {
+            nextGlobalCssLoader.issuer.or = nextGlobalCssLoader.issuer.and ? nextGlobalCssLoader.issuer.and.concat(matcher) : matcher;
+            delete nextGlobalCssLoader.issuer.not;
+            delete nextGlobalCssLoader.issuer.and;
+          } else if (!options.isServer) {
+            console.warn('next-transpile-modules - could not find default CSS rule, global CSS imports may not work');
+          }
+
+          if (nextGlobalSassLoader) {
+            nextGlobalSassLoader.issuer.or = nextGlobalSassLoader.issuer.and ? nextGlobalSassLoader.issuer.and.concat(matcher) : matcher;
+            delete nextGlobalSassLoader.issuer.not;
+            delete nextGlobalSassLoader.issuer.and;
+          } else if (!options.isServer) {
+            console.warn('next-transpile-modules - could not find default SASS rule, global SASS imports may not work');
+          }
         }
 
         // Make hot reloading work!
