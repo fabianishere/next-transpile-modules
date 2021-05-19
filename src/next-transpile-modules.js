@@ -312,6 +312,35 @@ const withTmInitializer = (modules = [], options = {}) => {
           }
         }
 
+        // Add support for Global CSS imports in transpiled modules
+        if (nextCssLoaders) {
+          const nextGlobalCssLoader = nextCssLoaders.oneOf.find(
+            (rule) => rule.sideEffects === true && regexEqual(rule.test, /(?<!\.module)\.css$/)
+          );
+
+          if (nextGlobalCssLoader) {
+            nextGlobalCssLoader.issuer.or = nextGlobalCssLoader.issuer.and ? nextGlobalCssLoader.issuer.and.concat(matcher) : matcher;
+            delete nextGlobalCssLoader.issuer.not;
+            delete nextGlobalCssLoader.issuer.and;
+          } else if (!options.isServer) {
+            // Note that Next.js ignores global CSS imports on the server
+            console.warn('next-transpile-modules - could not find default CSS rule, global CSS imports may not work');
+          }
+
+          const nextGlobalSassLoader = nextCssLoaders.oneOf.find(
+            (rule) => rule.sideEffects === true && regexEqual(rule.test, /(?<!\.module)\.(scss|sass)$/)
+          );
+
+          if (nextGlobalSassLoader) {
+            nextGlobalSassLoader.issuer.or = nextGlobalSassLoader.issuer.and ? nextGlobalSassLoader.issuer.and.concat(matcher) : matcher;
+            delete nextGlobalSassLoader.issuer.not;
+            delete nextGlobalSassLoader.issuer.and;
+          } else if (!options.isServer) {
+            // Note that Next.js ignores global SASS imports on the server
+            console.warn('next-transpile-modules - could not find default SASS rule, global SASS imports may not work');
+          }
+        }
+
         // Make hot reloading work!
         // FIXME: not working on Wepback 5
         // https://github.com/vercel/next.js/issues/13039
